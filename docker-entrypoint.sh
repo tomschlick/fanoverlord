@@ -156,14 +156,13 @@ array_contains () {
     return 0
 }
 
-# Start by setting the fans to default low level
-echo "Info: Activating manual fan speeds (2280 RPM)"
-ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
-ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x0f
+# Start by setting the fans to auto
+echo "Fetching current temperature...\n"
 
 while :
 do
   CurrentTemp=$(gettemp)
+  
   if [[ $CurrentTemp > $MAXTEMP ]]; then
     EMERGENCY=true
     FanAuto
