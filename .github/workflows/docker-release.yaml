@@ -10,6 +10,11 @@ jobs:
       packages: write
       contents: read
     steps:
+      - uses: FranzDiebold/github-env-vars-action@v2
+        name: Print environment variables
+        run: |
+          echo "CI_ACTION_REF_NAME=$CI_ACTION_REF_NAME"
+
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Log in to GitHub Docker Registry
@@ -24,5 +29,5 @@ jobs:
           push: true
           tags: |
             docker.pkg.github.com/${{ github.repository }}/fanoverlord:${{ github.sha }}
-            docker.pkg.github.com/${{ github.repository }}/fanoverlord:${{ github.ref }}
+            docker.pkg.github.com/${{ github.repository }}/fanoverlord:${{ env.CI_ACTION_REF_NAME }}
             docker.pkg.github.com/${{ github.repository }}/fanoverlord:latest
