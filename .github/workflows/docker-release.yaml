@@ -28,5 +28,5 @@ jobs:
         with:
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/fanoverlord:${{ env.CI_ACTION_REF_NAME }}
-            ghcr.io/${{ github.repository }}/fanoverlord:latest
+            ghcr.io/${{ github.repository }}:${{ env.CI_ACTION_REF_NAME }}
+            ghcr.io/${{ github.repository }}:latest
