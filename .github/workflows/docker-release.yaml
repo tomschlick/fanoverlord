@@ -30,3 +30,4 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ env.CI_ACTION_REF_NAME }}
             ghcr.io/${{ github.repository }}:latest
+            

@@ -1,7 +1,7 @@
 version: '3'
 services:
   fanoverlord:
-    image: fanoverlord:latest
+    image: ghcr.io/tomschlick/fanoverlord:latest
     container_name: fanoverlord
     environment:
       - IPMIHOST=${IPMIHOST}
@@ -9,3 +9,4 @@ services:
       - IPMIPW=${IPMIPW}
       - SLEEP=${SLEEP}
     restart: always
+    
