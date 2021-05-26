@@ -7,48 +7,30 @@
 #
 # Requires:
 # ipmitool – apt-get install ipmitool
-# slacktee.sh – https://github.com/course-hero/slacktee
 # ----------------------------------------------------------------------------------
 # Set the state of Emergency (is it too hot or not)
 EMERGENCY=false
 NOTIFY=true
 
+CURRENT_MODE=default
+
 # IPMI SETTINGS:
-# DEFAULT IP: 192.168.0.120
 IPMIHOST=${IPMIHOST} # <IP Address of the iDRAC on the Server>
 IPMIUSER=${IPMIUSER} # <User for the iDRAC>
 IPMIPW=${IPMIPW} # <Password for the iDRAC
 
-# HealthCheck HC_URL
-HC_URL=${HC_URL} # <Unique Ping URL component>
-
-# Slacktee Configs
-WEBHOOK_URL=${WEBHOOK_URL}
-UPLOAD_TOKEN=${UPLOAD_TOKEN}
-CHANNEL=${CHANNEL}
-TMP_DIR=${TMP_DIR}
-USERNAME=${USERNAME}
-ICON=${ICON}
-ATTACHMENT=${ATTACHMENT}
-
-# Configure Slacktee
-sed -i 's#webhook_url=""#webhook_url="'"$WEBHOOK_URL"'"#g' /etc/slacktee.conf
-sed -i 's/upload_token=""/upload_token="'"$UPLOAD_TOKEN"'"/g' /etc/slacktee.conf
-sed -i 's/channel=""/channel="'"$CHANNEL"'"/g' /etc/slacktee.conf
-sed -i 's#tmp_dir=""#tmp_dir="'"$TMP_DIR"'"#g' /etc/slacktee.conf
-sed -i 's/username=""/username="'"$USERNAME"'"/g' /etc/slacktee.conf
-sed -i 's/icon=""/icon="'"$ICON"'"/g' /etc/slacktee.conf
-sed -i 's/attachment=""/attachment="'"$ATTACHMENT"'"/g' /etc/slacktee.conf
+# SLEEP SETTING:
+SLEEP=${SLEEP}
 
 # TEMPERATURE
 # Change this to the temperature in celcius you are comfortable with.
 # If the temperature goes above the set degrees it will send raw IPMI command to enable dynamic fan control
 # According to iDRAC Min Warning is 42C and Failure (shutdown) is 47C
 StartMidTemp="28"
-MidTemp=( "28" "29" "30" "31" )
-HighTemp=( "32" "33" "34" "35" )
-VeryHighTemp=( "36" "37" "38" "39" "40" )
-MAXTEMP="40"
+MidTemp=( "28" "29" "30" "31" "32" "33" "34")
+HighTemp=( "35" "36" "37" "38" "39" "40" "41" "42")
+VeryHighTemp=( "43" "44" "45" "46" "47" "48" "49" "50" )
+MAXTEMP="50"
 
 
 
@@ -73,52 +55,88 @@ MAXTEMP="40"
 # Default level: 3000 RPM
 function FanDefault()
 {
+  if [ "$CURRENT_MODE" == "default" ] ; then
+    echo "Maintaining current mode: $CURRENT_MODE"
+    return 0
+  fi
+
   echo "Info: Activating manual fan speeds (3000 RPM)"
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x10
+
+  CURRENT_MODE=default
 }
 
 # Mid-Level: 5880 RPM
 function FanMid()
 {
+  if [ "$CURRENT_MODE" == "mid" ] ; then
+    echo "Maintaining current mode: $CURRENT_MODE"
+    return 0
+  fi
+
   echo "Info: Activating manual fan speeds (5880 RPM)"
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x20
+
+  CURRENT_MODE=mid
 }
 
 # High-level: 8800 RPM
 function FanHigh()
 {
+  if [ "$CURRENT_MODE" == "high" ] ; then
+    echo "Maintaining current mode: $CURRENT_MODE"
+    return 0
+  fi
+
+
   echo "Info: Activating manual fan speeds (8880 RPM)"
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x30
+
+  CURRENT_MODE=high
 }
 
 # Very-High-level: 14640 RPM
 function FanVeryHigh()
 {
+  if [ "$CURRENT_MODE" == "veryhigh" ] ; then
+    echo "Maintaining current mode: $CURRENT_MODE"
+    return 0
+  fi
+
+
   echo "Info: Activating manual fan speeds (14640 RPM)"
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x50
+
+  CURRENT_MODE=veryhigh
 }
 
 # Auto-controled
 function FanAuto()
 {
-  echo "Info: Dynamic fan control Active ($CurrentTemp C)" | /usr/bin/slacktee.sh -t "R610 [$(hostname)]"
+  if [ "$CURRENT_MODE" == "auto" ] ; then
+    echo "Maintaining current mode: $CURRENT_MODE"
+    return 0
+  fi
+
+
+  echo "Info: Dynamic fan control Active ($CurrentTemp C)"
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x01
+
+  CURRENT_MODE=auto
 }
 
 function gettemp()
 {
-  TEMP=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW sdr type temperature |grep Ambient |grep degrees |grep -Po '\d{2}' | tail -1)
+  TEMP=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW sdr type temperature |grep -E ^Temp |grep degrees |grep -Po '\d{2}' | tail -1)
   echo "$TEMP"
 }
 
 function healthcheck()
 {
-  # healthchecks.io
-  curl -fsS --retry 3 $HC_URL >/dev/null 2>&1
   if $EMERGENCY; then
     echo "Temperature is NOT OK ($CurrentTemp C). Emergency Status: $EMERGENCY"
   else
@@ -182,5 +200,6 @@ do
   fi
 
   healthcheck
-  sleep 20
-done
+
+  echo "Sleeping for $SLEEP seconds..."
+  sleep $SLEEP
