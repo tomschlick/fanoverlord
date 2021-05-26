@@ -19,15 +19,14 @@ jobs:
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v1
         with:
-          registry: docker.pkg.github.com
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Build container image
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: |
-            docker.pkg.github.com/${{ github.repository }}/fanoverlord:${{ github.sha }}
-            docker.pkg.github.com/${{ github.repository }}/fanoverlord:${{ env.CI_ACTION_REF_NAME }}
-            docker.pkg.github.com/${{ github.repository }}/fanoverlord:latest
+            ghcr.io/${{ github.repository }}/fanoverlord:${{ env.CI_ACTION_REF_NAME }}
+            ghcr.io/${{ github.repository }}/fanoverlord:latest
