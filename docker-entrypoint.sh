@@ -64,7 +64,7 @@ function FanDefault()
   fi
 
   echo "Info: Activating manual fan speeds (3000 RPM)"
-  ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
+  FanManual
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x10
 
   CURRENT_MODE=default
@@ -79,7 +79,7 @@ function FanMid()
   fi
 
   echo "Info: Activating manual fan speeds (5880 RPM)"
-  ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
+  FanManual
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x20
 
   CURRENT_MODE=mid
@@ -95,7 +95,7 @@ function FanHigh()
 
 
   echo "Info: Activating manual fan speeds (8880 RPM)"
-  ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
+  FanManual
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x30
 
   CURRENT_MODE=high
@@ -111,7 +111,7 @@ function FanVeryHigh()
 
 
   echo "Info: Activating manual fan speeds (14640 RPM)"
-  ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
+  FanManual
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x50
 
   CURRENT_MODE=veryhigh
@@ -130,6 +130,11 @@ function FanAuto()
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x01
 
   CURRENT_MODE=auto
+}
+
+function FanManual()
+{
+  ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x01 0x00
 }
 
 function gettemp()
