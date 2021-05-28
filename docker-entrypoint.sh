@@ -22,6 +22,9 @@ IPMIPW=${IPMIPW} # <Password for the iDRAC
 # SLEEP SETTING:
 SLEEP=${SLEEP:-30}
 
+# Sensor
+SENSOR=${SENSOR:-"Temp"}
+
 # TEMPERATURE
 # Change this to the temperature in celcius you are comfortable with.
 # If the temperature goes above the set degrees it will send raw IPMI command to enable dynamic fan control
@@ -131,7 +134,7 @@ function FanAuto()
 
 function gettemp()
 {
-  TEMP=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW sdr type temperature |grep -E ^Temp |grep degrees |grep -Po '\d{2}' | tail -1)
+  TEMP=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW sdr type temperature |grep -E ^$SENSOR |grep degrees |grep -Po '\d{2}' | tail -1)
   echo "$TEMP"
 }
 
