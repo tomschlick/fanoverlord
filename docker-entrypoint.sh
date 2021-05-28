@@ -27,9 +27,9 @@ SLEEP=${SLEEP}
 # If the temperature goes above the set degrees it will send raw IPMI command to enable dynamic fan control
 # According to iDRAC Min Warning is 42C and Failure (shutdown) is 47C
 StartMidTemp="28"
-MidTemp=( "28" "29" "30" "31" "32" "33" "34")
-HighTemp=( "35" "36" "37" "38" "39" "40" "41" "42")
-VeryHighTemp=( "43" "44" "45" "46" "47" "48" "49" "50" )
+MidTemp=( "28" "29" "30" "31" "32" "33" "34" "35" "36" "37" "38" "39" "40")
+HighTemp=( "41" "42" "43" "44")
+VeryHighTemp=( "45" "46" "47" "48" "49" "50" )
 MAXTEMP="50"
 
 
