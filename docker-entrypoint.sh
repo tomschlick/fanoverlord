@@ -20,7 +20,7 @@ IPMIUSER=${IPMIUSER} # <User for the iDRAC>
 IPMIPW=${IPMIPW} # <Password for the iDRAC
 
 # SLEEP SETTING:
-SLEEP=${SLEEP}
+SLEEP=${SLEEP:-30}
 
 # TEMPERATURE
 # Change this to the temperature in celcius you are comfortable with.
