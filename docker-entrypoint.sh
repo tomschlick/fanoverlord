@@ -147,6 +147,13 @@ function healthcheck()
   fi
 }
 
+function onExit {
+  echo "Exiting... Setting fans back to auto..."
+  FanAuto
+}
+
+trap onExit EXIT
+
 # Helper function for does an array contain a this value
 array_contains () {
     local array="$1[@]"
