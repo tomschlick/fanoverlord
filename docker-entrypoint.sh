@@ -25,40 +25,26 @@ SLEEP=${SLEEP:-30}
 # Sensor
 SENSOR=${SENSOR:-"Temp"}
 
-# TEMPERATURE
-# Change this to the temperature in celcius you are comfortable with.
-# If the temperature goes above the set degrees it will send raw IPMI command to enable dynamic fan control
-# According to iDRAC Min Warning is 42C and Failure (shutdown) is 47C
-StartMidTemp="28"
-MidTemp=( "28" "29" "30" "31" "32" "33" "34" "35" "36" "37" "38" "39" "40")
-HighTemp=( "41" "42" "43" "44")
-VeryHighTemp=( "45" "46" "47" "48" "49" "50" )
+# Fans
+
+FAN_LOW_PERCENTAGE=${FAN_LOW_PERCENTAGE:-15}
+FAN_LOW_THRESHOLD=${FAN_LOW_THRESHOLD:-30}
+
+FAN_MEDIUM_PERCENTAGE=${FAN_MEDIUM_PERCENTAGE:-25}
+FAN_MEDIUM_THRESHOLD=${FAN_MEDIUM_THRESHOLD:-37}
+
+FAN_HIGH_PERCENTAGE=${FAN_HIGH_PERCENTAGE:-35}
+FAN_HIGH_THRESHOLD=${FAN_HIGH_THRESHOLD:-43}
+
+FAN_VERYHIGH_PERCENTAGE=${FAN_VERYHIGH_PERCENTAGE:-50}
+FAN_VERYHIGH_THRESHOLD=${FAN_VERYHIGH_THRESHOLD:-47}
+
 MAXTEMP="50"
 
 
-
-# Last Octal controls values to know
-# Query Fan speeds
-# ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW sdr type fan
-#
-# Fan Power Percentages
-# 0x00 = 0%
-# 0x64 = 100%
-#
-# R610 RPM values
-# 0b = 2280 RPM
-# 0e = 2640 RPM
-# 0f = 2760 RPM
-# 10 = 3000 RPM
-# 1a = 4800 RPM
-# 20 = 5880 RPM
-# 30 = 8880 RPM
-# 50 = 14640 RPM
-
-# Default level: 3000 RPM
-function FanDefault()
+function FanLow()
 {
-  if [ "$CURRENT_MODE" == "default" ] ; then
+  if [ "$CURRENT_MODE" == "low" ] ; then
     echo "Maintaining current mode: $CURRENT_MODE"
     return 0
   fi
@@ -67,13 +53,12 @@ function FanDefault()
   FanManual
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x10
 
-  CURRENT_MODE=default
+  CURRENT_MODE=low
 }
 
-# Mid-Level: 5880 RPM
-function FanMid()
+function FanMedium()
 {
-  if [ "$CURRENT_MODE" == "mid" ] ; then
+  if [ "$CURRENT_MODE" == "medium" ] ; then
     echo "Maintaining current mode: $CURRENT_MODE"
     return 0
   fi
@@ -82,10 +67,9 @@ function FanMid()
   FanManual
   ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW raw 0x30 0x30 0x02 0xff 0x20
 
-  CURRENT_MODE=mid
+  CURRENT_MODE=medium
 }
 
-# High-level: 8800 RPM
 function FanHigh()
 {
   if [ "$CURRENT_MODE" == "high" ] ; then
@@ -101,7 +85,6 @@ function FanHigh()
   CURRENT_MODE=high
 }
 
-# Very-High-level: 14640 RPM
 function FanVeryHigh()
 {
   if [ "$CURRENT_MODE" == "veryhigh" ] ; then
@@ -117,7 +100,6 @@ function FanVeryHigh()
   CURRENT_MODE=veryhigh
 }
 
-# Auto-controled
 function FanAuto()
 {
   if [ "$CURRENT_MODE" == "auto" ] ; then
@@ -152,6 +134,38 @@ function healthcheck()
   fi
 }
 
+function SetCorrectSpeed()
+{
+  CurrentTemp=$(gettemp)
+
+  if [[ $CurrentTemp > $MAXTEMP ]]; then
+    EMERGENCY=true
+    NOTIFY=true
+    FanAuto
+
+  elif [[ $CurrentTemp > $FAN_VERYHIGH_THRESHOLD ]]; then
+    EMERGENCY=false
+    NOTIFY=false
+    FanVeryHigh
+
+  elif [[ $CurrentTemp > $FAN_HIGH_THRESHOLD ]]; then
+    EMERGENCY=false
+    NOTIFY=false
+    FanHigh
+
+  elif [[ $CurrentTemp > $FAN_MEDIUM_THRESHOLD ]]; then
+    EMERGENCY=false
+    NOTIFY=false
+    FanMedium
+
+  elif [[ $CurrentTemp > $FAN_LOW_THRESHOLD ]]; then
+    EMERGENCY=false
+    NOTIFY=false
+    FanLow
+
+  fi
+}
+
 function onExit {
   echo "Exiting... Setting fans back to auto..."
   FanAuto
@@ -176,42 +190,7 @@ echo "Fetching current temperature...\n"
 
 while :
 do
-  CurrentTemp=$(gettemp)
-  
-  if [[ $CurrentTemp > $MAXTEMP ]]; then
-    EMERGENCY=true
-    FanAuto
-  fi
-
-  if [[ $CurrentTemp < $StartMidTemp ]]; then
-    EMERGENCY=false
-    NOTIFY=false
-    FanDefault
-  fi
-
-  array_contains MidTemp $CurrentTemp
-  result=$(echo $?)
-  if [ "$result" -eq 1 ] ; then
-    EMERGENCY=false
-    NOTIFY=false
-    FanMid
-  fi
-
-  array_contains HighTemp $CurrentTemp
-  result=$(echo $?)
-  if [ "$result" -eq 1 ] ; then
-    EMERGENCY=false
-    NOTIFY=false
-    FanHigh
-  fi
-
-  array_contains VeryHighTemp $CurrentTemp
-  result=$(echo $?)
-  if [ "$result" -eq 1 ] ; then
-    EMERGENCY=false
-    NOTIFY=false
-    FanVeryHigh
-  fi
+  SetCorrectSpeed
 
   healthcheck
 
